@@ -1,0 +1,50 @@
+/**
+ * Global Styles
+ *
+ * Imports:
+ *  - Google Fonts: Sora (clean, modern sans-serif matching the dark dashboard theme)
+ *
+ * Resets box model, removes default margins, sets background.
+ */
+
+/* Google Fonts — Sora */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap');
+
+/* ─── Box Model Reset ─── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Root / Body ─── */
+html,
+body {
+  height: 100%;
+  background: #1a1a1a;
+  color: #e8e8e8;
+  font-family: 'Sora', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar Styling (Webkit) ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #383838;
+  border-radius: 3px;
+
+  &:hover {
+    background: #1c4980;
+  }
+}

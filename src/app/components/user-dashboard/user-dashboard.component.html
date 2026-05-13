@@ -1,0 +1,239 @@
+<!--
+  UserDashboardComponent Template
+  ================================
+  Layout:
+    - Header bar with title + "Add User" button
+    - Filter/search bar (Bonus)
+    - Two-column grid: [User Table] | [Pie Chart]
+    - Pagination controls below the table (Bonus)
+    - Modal overlay (lazy-loaded UserFormComponent)
+-->
+
+<div class="dashboard-wrapper">
+
+  <!-- ═══════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════ -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <span class="header-icon">👥</span>
+      <div>
+        <h1 class="header-title">User Dashboard</h1>
+        <p class="header-subtitle">Manage users and monitor role distribution</p>
+      </div>
+    </div>
+
+    <!-- Add User Button — triggers lazy modal load -->
+    <button
+      class="btn-primary"
+      (click)="openModal()"
+      [disabled]="isModalLoading"
+      aria-label="Open Add User Form"
+    >
+      <span *ngIf="!isModalLoading">+ Add User</span>
+      <span *ngIf="isModalLoading" class="loading-dots">Loading<span>.</span><span>.</span><span>.</span></span>
+    </button>
+  </header>
+
+  <!-- ═══════════════════════════════════════════
+       STATS BAR
+  ════════════════════════════════════════════ -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value">{{ users.length }}</span>
+      <span class="stat-label">Total Users</span>
+    </div>
+    <div class="stat-card admin">
+      <span class="stat-value">{{ users | roleCount:'Admin' }}</span>
+      <span class="stat-label">Admins</span>
+    </div>
+    <div class="stat-card editor">
+      <span class="stat-value">{{ users | roleCount:'Editor' }}</span>
+      <span class="stat-label">Editors</span>
+    </div>
+    <div class="stat-card viewer">
+      <span class="stat-value">{{ users | roleCount:'Viewer' }}</span>
+      <span class="stat-label">Viewers</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SEARCH & FILTER BAR (Bonus)
+  ════════════════════════════════════════════ -->
+  <div class="filter-bar">
+    <!-- Search input -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search by name or email..."
+        [value]="searchQuery"
+        (input)="onSearchChange($any($event.target).value)"
+        aria-label="Search users"
+      />
+    </div>
+
+    <!-- Role filter dropdown -->
+    <select
+      class="filter-select"
+      [value]="roleFilter"
+      (change)="onRoleFilterChange($any($event.target).value)"
+      aria-label="Filter by role"
+    >
+      <option *ngFor="let role of roleOptions" [value]="role">
+        {{ role === 'All' ? 'All Roles' : role }}
+      </option>
+    </select>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN CONTENT GRID: Table + Chart
+  ════════════════════════════════════════════ -->
+  <div class="content-grid">
+
+    <!-- ─── LEFT: User Table ─── -->
+    <section class="table-section" aria-label="Users Table">
+      <div class="section-header">
+        <h2 class="section-title">Users</h2>
+        <span class="user-count">{{ filteredUsers.length }} result{{ filteredUsers.length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      <!-- Table container with scroll for overflow -->
+      <div class="table-container">
+        <table class="user-table" role="table" aria-label="User list">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- trackBy prevents full DOM re-render on new user addition -->
+            <tr
+              *ngFor="let user of paginatedUsers; trackBy: trackByUserId; let i = index"
+              class="table-row"
+              [class.fade-in]="true"
+            >
+              <td class="td-index">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+              <td class="td-name">
+                <div class="avatar-cell">
+                  <!-- Generated avatar using initials -->
+                  <span class="avatar" [attr.data-role]="user.role">
+                    {{ user.name.charAt(0).toUpperCase() }}
+                  </span>
+                  <span>{{ user.name }}</span>
+                </div>
+              </td>
+              <td class="td-email">{{ user.email }}</td>
+              <td class="td-role">
+                <!-- Role badge with color-coded styling via data attribute -->
+                <span class="role-badge" [attr.data-role]="user.role">
+                  {{ user.role }}
+                </span>
+              </td>
+            </tr>
+
+            <!-- Empty state when no results match the filter -->
+            <tr *ngIf="paginatedUsers.length === 0">
+              <td colspan="4" class="empty-state">
+                <span>😕 No users found. Try a different search or filter.</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ─── Pagination Controls (Bonus) ─── -->
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button
+          class="page-btn"
+          (click)="prevPage()"
+          [disabled]="currentPage === 1"
+          aria-label="Previous page"
+        >‹</button>
+
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+
+        <button
+          class="page-btn"
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages"
+          aria-label="Next page"
+        >›</button>
+      </div>
+    </section>
+
+    <!-- ─── RIGHT: Pie Chart ─── -->
+    <section class="chart-section" aria-label="Role Distribution Chart">
+      <div class="section-header">
+        <h2 class="section-title">Role Distribution</h2>
+      </div>
+
+      <!-- Loading spinner while Chart.js lazy-loads -->
+      <div *ngIf="isChartLoading" class="chart-loading">
+        <div class="spinner"></div>
+        <p>Loading chart...</p>
+      </div>
+
+      <!-- Chart canvas — hidden until Chart.js loads to avoid flash -->
+      <div class="chart-container" [class.hidden]="isChartLoading">
+        <canvas #roleChart aria-label="Pie chart showing role distribution"></canvas>
+      </div>
+
+      <!-- Role legend with live counts -->
+      <div class="role-legend" *ngIf="!isChartLoading">
+        <div class="legend-item admin-color">
+          <span class="legend-dot"></span>
+          <span>Admin</span>
+          <span class="legend-count">{{ users | roleCount:'Admin' }}</span>
+        </div>
+        <div class="legend-item editor-color">
+          <span class="legend-dot"></span>
+          <span>Editor</span>
+          <span class="legend-count">{{ users | roleCount:'Editor' }}</span>
+        </div>
+        <div class="legend-item viewer-color">
+          <span class="legend-dot"></span>
+          <span>Viewer</span>
+          <span class="legend-count">{{ users | roleCount:'Viewer' }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL OVERLAY (Lazy-loaded UserFormComponent)
+════════════════════════════════════════════ -->
+<div
+  class="modal-overlay"
+  *ngIf="isModalOpen"
+  (click)="closeModal()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Add User Modal"
+>
+  <!-- Stop click propagation so clicking inside modal doesn't close it -->
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <!-- Modal loading state while UserFormComponent chunk downloads -->
+    <div *ngIf="isModalLoading" class="modal-loading">
+      <div class="spinner"></div>
+      <p>Loading form...</p>
+    </div>
+
+    <!-- Render lazy-loaded UserFormComponent once it's loaded -->
+    <ng-container *ngIf="!isModalLoading && userFormComponent">
+      <ng-container
+        *ngComponentOutlet="
+          userFormComponent;
+          inputs: { onUserAdded: onUserAdded.bind(this), onCancel: closeModal.bind(this) }
+        "
+      ></ng-container>
+    </ng-container>
+  </div>
+</div>

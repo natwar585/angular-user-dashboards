@@ -1,0 +1,148 @@
+<!--
+  UserFormComponent Template
+  ===========================
+  A reactive form for adding a new user with:
+    - Name text input
+    - Email input
+    - Role dropdown (Admin | Editor | Viewer)
+    - Inline validation error messages per field
+    - Submit and Cancel buttons (48px height per spec)
+-->
+
+<div class="form-wrapper">
+
+  <!-- Modal Header -->
+  <div class="form-header">
+    <div class="form-title-group">
+      <span class="form-icon">➕</span>
+      <div>
+        <h2 class="form-title">Add New User</h2>
+        <p class="form-subtitle">Fill in the details to create a new user account</p>
+      </div>
+    </div>
+
+    <!-- Close (X) button -->
+    <button
+      class="close-btn"
+      type="button"
+      (click)="onCancelClick()"
+      aria-label="Close form"
+    >✕</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       REACTIVE FORM
+  ════════════════════════════════════════ -->
+  <form
+    [formGroup]="userForm"
+    (ngSubmit)="onSubmit()"
+    novalidate
+    class="user-form"
+  >
+
+    <!-- ─── Name Field ─── -->
+    <div class="form-group" [class.has-error]="shouldShowError('name')">
+      <label class="form-label" for="name">
+        Full Name <span class="required-star">*</span>
+      </label>
+      <input
+        id="name"
+        type="text"
+        class="form-input"
+        formControlName="name"
+        placeholder="e.g. John Doe"
+        autocomplete="name"
+        aria-required="true"
+        [attr.aria-describedby]="shouldShowError('name') ? 'name-error' : null"
+      />
+      <!-- Validation error message -->
+      <span
+        *ngIf="shouldShowError('name')"
+        id="name-error"
+        class="error-msg"
+        role="alert"
+      >
+        <span class="error-icon">⚠</span>
+        {{ getErrorMessage('name') }}
+      </span>
+    </div>
+
+    <!-- ─── Email Field ─── -->
+    <div class="form-group" [class.has-error]="shouldShowError('email')">
+      <label class="form-label" for="email">
+        Email Address <span class="required-star">*</span>
+      </label>
+      <input
+        id="email"
+        type="email"
+        class="form-input"
+        formControlName="email"
+        placeholder="e.g. john@example.com"
+        autocomplete="email"
+        aria-required="true"
+        [attr.aria-describedby]="shouldShowError('email') ? 'email-error' : null"
+      />
+      <!-- Validation error message -->
+      <span
+        *ngIf="shouldShowError('email')"
+        id="email-error"
+        class="error-msg"
+        role="alert"
+      >
+        <span class="error-icon">⚠</span>
+        {{ getErrorMessage('email') }}
+      </span>
+    </div>
+
+    <!-- ─── Role Dropdown ─── -->
+    <div class="form-group" [class.has-error]="shouldShowError('role')">
+      <label class="form-label" for="role">
+        Role <span class="required-star">*</span>
+      </label>
+      <select
+        id="role"
+        class="form-select"
+        formControlName="role"
+        aria-required="true"
+        [attr.aria-describedby]="shouldShowError('role') ? 'role-error' : null"
+      >
+        <!-- Default empty option -->
+        <option value="" disabled selected>Select a role</option>
+        <!-- Dynamic options from component -->
+        <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+      </select>
+      <!-- Validation error message -->
+      <span
+        *ngIf="shouldShowError('role')"
+        id="role-error"
+        class="error-msg"
+        role="alert"
+      >
+        <span class="error-icon">⚠</span>
+        {{ getErrorMessage('role') }}
+      </span>
+    </div>
+
+    <!-- ─── Form Actions ─── -->
+    <div class="form-actions">
+      <!-- Cancel button -->
+      <button
+        type="button"
+        class="btn-cancel"
+        (click)="onCancelClick()"
+      >
+        Cancel
+      </button>
+
+      <!-- Submit button -->
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="userForm.invalid && isSubmitted"
+      >
+        Add User
+      </button>
+    </div>
+  </form>
+
+</div>
